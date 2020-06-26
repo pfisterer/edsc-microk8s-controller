@@ -1,0 +1,15 @@
+apiVersion: skaffold/v1
+kind: Config
+
+metadata:
+  name: edsc-microk8s-controller
+
+build:
+  artifacts:
+    - image: farberg/edsc-microk8s-controller
+      context: .
+
+deploy:
+  kubectl:
+    manifests:
+      - config/k8s-deployment.yaml

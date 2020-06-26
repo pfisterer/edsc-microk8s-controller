@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edsc-microk8s-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "edsc-microk8s-controller"
+  template:
+    metadata:
+      labels:
+        app: "edsc-microk8s-controller"
+    spec:
+      containers:
+        - name: edsc-microk8s-controller
+          image: farberg/edsc-microk8s-controller
+          args:
+            - "--mode"
+            - "production"
+            - "--verbose"
+          ports:
+            - containerPort: 8080
+#          livenessProbe:
+#            httpGet:
+#              path: /health/liveness
+#              port: 7777
+#            initialDelaySeconds: 5
+#            periodSeconds: 30
+#          readinessProbe:
+#            httpGet:
+#              path: /health/readiness
+#              port: 7777
+#            initialDelaySeconds: 5
+#            periodSeconds: 30
+#          resources:
+#            limits:
+#              cpu: ".1"
+#              memory: "256Mi"
+

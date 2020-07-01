@@ -41,8 +41,6 @@ spec:
         spec:
           type: object
           properties:
-            node_name:
-              type: string
             image:
               type: string
             flavor:

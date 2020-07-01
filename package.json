@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "npx webpack --config webpack.config.prod.js",
-    "start": "nodemon app/server.js -- --verbose",
+    "start": "nodemon app/server.js -- --verbose --image-pull-policy Never",
     "deploy": "skaffold build -q | skaffold deploy --build-artifacts -"
   },
   "author": "Dennis Pfisterer <github@farberg.de>",
@@ -16,7 +16,9 @@
     "js-yaml": "^3.14.0",
     "kubernetes-client": "^9.0.0",
     "log4js": "^6.3.0",
-    "set-interval-async": "^1.0.33"
+    "set-interval-async": "^1.0.33",
+    "@awaitjs/express": "^0.6.1",
+    "express": "^4.17.1"
   },
   "devDependencies": {
     "shebang-loader": "0.0.1",

@@ -36,9 +36,9 @@ module.exports = class Reconciler extends Operator {
 
 		this.logger.debug(`init: Watching group ${this.crdGroup}, versions[0].name ${this.crdVersions[0].name}, plural ${this.crdPlural}`)
 
-		let watcher = event => {
+		let watcher = async (event) => {
 			let q = event.type === ResourceEventType.Deleted ? this.deleteQueue : this.addQueue
-			this.enque(q, event.object)
+			this.enque(q, await this.reconcileHandler.getKey(event.object.spec), event.object.spec, null)
 		}
 
 		await this.watchResource(this.crdGroup, this.crdVersions[0].name, this.crdPlural, watcher, this.options.namespace);

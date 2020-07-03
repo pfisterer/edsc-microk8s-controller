@@ -49,14 +49,22 @@ module.exports = class CrHandler {
 		this.app.postAsync('/status/:key', async (req, res) => {
 			const key = req.params.key
 			const statusJson = req.body
-
 			this.logger.debug(`Received status for key ${key}`);
-			const { exit_code, kubeconfig, serverlist, log_output } = statusJson
 
+			const { exit_code, kubeconfig, serverlist, log_output } = statusJson
 			this.logger.debug(`exit_code = ${exit_code}`)
 			this.logger.debug(`kubeconfig = ${kubeconfig}`)
 			this.logger.debug(`serverlist = ${serverlist}`)
 			//this.logger.debug(`log_output = ${log_output}`)
+
+			try {
+				const existingPod = await this.podRunner.get(key);
+				this.logger.debug(`Existing pod for key = ${key} is in phase ${existingPod.status.phase}`) //Pending, Running, Succeeded, Failed, Unknown
+				await this.statusFunction(key, statusJson)
+
+			} catch {
+				this.logger.warn(`app:postAsync: No pod for key = ${key} exists, unable to set status`)
+			}
 
 			res.send("Ok")
 		})
@@ -109,6 +117,13 @@ module.exports = class CrHandler {
 		return true
 	}
 
+
+	//invoked by the reconciler and provides a function(key, statusPatch) which can be 
+	//called to set the status of a pod
+	setSetStatusFunction(statusFunction) {
+		this.statusFunction = statusFunction
+	}
+
 	async isValidSpec(spec) {
 		if (!spec) {
 			this.logger.debug(`isValidSpec: spec is null`)
@@ -129,11 +144,6 @@ module.exports = class CrHandler {
 		return this.checkFieldsExist(requiredStatusFields, status)
 	}
 
-	async getKey(spec) {
-		if (!this.isValidSpec(spec))
-			return null;
-		return "microk8s-" + spec.openstack_username + "-" + spec.node_name;
-	}
 
 	async getExistingResources() {
 		// return map(key, object)
@@ -158,8 +168,8 @@ module.exports = class CrHandler {
 
 		try {
 			const existingPod = await this.podRunner.get(key);
-			this.logger.debug(`Existing pod for key = ${key}`)
-			this.logger.debug(`existingPod`, JSON.stringify(existingPod, null, 3))
+			this.logger.debug(`Existing pod for key = ${key} is in phase ${existingPod.status.phase}`) //Pending, Running, Succeeded, Failed, Unknown
+			//this.logger.debug(`existingPod`, JSON.stringify(existingPod, null, 3))
 
 		} catch {
 			this.logger.debug(`No pod for key = ${key} exists, creating a new one`)

@@ -18,7 +18,7 @@ let options = optionparser
 	.option('--hostname <hostname>', 'Hostname to use for constructing the status report URL', 'localhost')
 	.option('--port <port>', 'Port to start the status collection server on', 8080)
 	.option('--image <image>', 'Docker image (and tag) to use', 'farberg/edsc-microk8s-playbook')
-	.option('--image-pull-policy', 'Image pull policy to use for the pod spec', 'IfNotPresent')
+	.option('--image-pull-policy <policy>', 'Image pull policy to use for the pod spec', 'IfNotPresent')
 	.version('0.0.1alpha')
 	.addHelpCommand()
 	.parse()

@@ -66,7 +66,7 @@ module.exports = class Reconciler extends Operator {
 				}
 				this.id = id;
 				this.name = object.metadata.name;
-				this.options.namespace = object.metadata.namespace;
+				this.namespace = object.metadata.namespace;
 				this.resourceVersion = object.metadata.resourceVersion;
 				this.apiVersion = object.apiVersion;
 				this.kind = object.kind;

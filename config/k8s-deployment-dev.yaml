@@ -19,7 +19,8 @@ spec:
             - containerPort: 8080
           args:
             - "--mode"
-            - "production"
+            - "development"
+            - "--verbose"
             - "--hostname"
             - "edsc-microk8s-controller-service"
 

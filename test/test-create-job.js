@@ -27,7 +27,7 @@ function podSpecFromCustomResourceSpec(crSpec) {
 				{ name: "OS_PASSWORD", value: crSpec.openstack_password },
 				{ name: "OS_PROJECT_NAME", value: crSpec.openstack_project },
 				{ name: "OS_DOMAIN_NAME", value: crSpec.openstack_domain_name },
-				{ name: "NODE_NAME", value: crSpec.node_name },
+				{ name: "NODE_NAME", value: crSpec.name },
 				{ name: "IMAGE", value: crSpec.image },
 				{ name: "NODE_FLAVOR", value: crSpec.flavor },
 				{ name: "NODE_SEC_GROUP", value: crSpec.security_group },

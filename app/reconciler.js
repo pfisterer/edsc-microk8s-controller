@@ -10,6 +10,12 @@ module.exports = class Reconciler extends Operator {
 		this.logger = options.getLogger("Reconciler");
 		this.reconcileHandler = options.reconcileHandler
 
+		this.reconcileHandler.setSetStatusFunction(async (key, statusPatch) => {
+			const existingCustomResources = (await this.listItems()) // array(cr)
+			const cr = this.getCrForKey(existingCustomResources, key)
+			this.updateResourceStatus(cr, statusPatch)
+		})
+
 		this.addQueue = new Map()
 		this.deleteQueue = new Map()
 
@@ -38,7 +44,7 @@ module.exports = class Reconciler extends Operator {
 
 		let watcher = async (event) => {
 			let q = event.type === ResourceEventType.Deleted ? this.deleteQueue : this.addQueue
-			this.enque(q, await this.reconcileHandler.getKey(event.object.spec), event.object.spec, null)
+			this.enque(q, event.object.spec.name, event.object, null)
 		}
 
 		await this.watchResource(this.crdGroup, this.crdVersions[0].name, this.crdPlural, watcher, this.options.namespace);
@@ -115,6 +121,10 @@ module.exports = class Reconciler extends Operator {
 	}
 
 	enque(q, key, customResource, resource) {
+		if (!customResource && !resource)
+			throw (`Enque stopped because !customResource (${customResource}) && !resource ${resource}`)
+
+		//this.logger.debug(`enque, key=${key}, q = `, q, ", customResource=", customResource, ", resource = ", resource)
 		q.set(key, { key, customResource, resource })
 	}
 
@@ -123,6 +133,7 @@ module.exports = class Reconciler extends Operator {
 		for (const key_value of this.deleteQueue) {
 			let key = key_value[0]
 			let value = key_value[1]
+			//this.logger.debug(`runQueues: Invoking handleDeleteResource with key = ${key}, customResource=`, value.customResource, ", resource=", value.resource)
 			await this.reconcileHandler.handleDeleteResource(key, value.customResource, value.resource);
 		}
 
@@ -132,8 +143,8 @@ module.exports = class Reconciler extends Operator {
 		for (const key_value of this.addQueue) {
 			let key = key_value[0]
 			let value = key_value[1]
+			//this.logger.debug(`runQueues: Invoking handleCreateOrUpdateResource with key = ${key}, customResource=`, value.customResource, ", resource=", value.resource)
 			await this.reconcileHandler.handleCreateOrUpdateResource(key, value.customResource, value.resource);
-
 		}
 
 		this.addQueue.clear();
@@ -148,7 +159,7 @@ module.exports = class Reconciler extends Operator {
 		const existingResourcesProvided = existingResources
 
 		const existingCustomResources = (await this.listItems()) // array(cr)
-		const existingCustomResourceKeys = existingCustomResources.map(async cr => await this.reconcileHandler.getKey(cr.spec)) // key
+		const existingCustomResourceKeys = existingCustomResources.map(cr => cr.metadata.name) // key
 
 		if (existingResourcesProvided) {
 
@@ -173,10 +184,13 @@ module.exports = class Reconciler extends Operator {
 		// CRs that have not proper status (and require update)
 		let invalidStatusCustomResources = existingCustomResources.filter(async cr => !(await this.reconcileHandler.isValidStatus(cr.status)))
 		for (const cr of invalidStatusCustomResources) {
-			let key = await this.reconcileHandler.getKey(cr.spec)
-			this.logger.warn(`reconcile: Invalid status for key = ${key}`)
+			let key = cr.metadata.name
+			this.logger.debug(`reconcile: Invalid status for key = ${key}`)
+
+			const customResource = this.getCrForKey(existingCustomResources, key)
 			const existingResource = existingResourcesProvided ? existingResources.get(key) : null
-			this.enque(this.addQueue, key, this.getCrForKey(existingCustomResources, key), existingResource)
+
+			this.enque(this.addQueue, key, customResource, existingResource)
 		}
 
 		// Process all events that are queued

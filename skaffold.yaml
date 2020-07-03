@@ -8,8 +8,22 @@ build:
   artifacts:
     - image: farberg/edsc-microk8s-controller
       context: .
+      docker:
+        dockerfile: Dockerfile
 
 deploy:
   kubectl:
     manifests:
       - config/k8s-deployment.yaml
+
+profiles:
+  - name: Development Profile
+    activation:
+      - command: dev
+    patches:
+      - op: replace
+        path: /build/artifacts/0/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /deploy/kubectl/manifests/0
+        value: config/k8s-deployment-dev.yaml

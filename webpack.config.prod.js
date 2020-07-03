@@ -22,6 +22,7 @@ module.exports = [
 			]
 		},
 		//,externals: [nodeExternals()]
-		//externals: { uws: "uws", emitter: "emitter", "browser-sync/lib/server/utils": "browser-sync/lib/server/utils" }
+		//externals: { electron: "electron", emitter: "emitter", "browser-sync/lib/server/utils": "browser-sync/lib/server/utils" }
+		externals: { electron: "electron", emitter: "emitter", "browser-sync/lib/server/utils": "browser-sync/lib/server/utils" }
 	}
 ];

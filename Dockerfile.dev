@@ -1,0 +1,15 @@
+FROM node:14-alpine
+LABEL maintainer="Dennis Pfisterer, http://www.dennis-pfisterer.de"
+
+WORKDIR /app
+
+COPY package.json package-lock.json /app/
+RUN npm install --no-optional
+
+COPY . /app/
+
+ARG NODE_ENV=development
+ENV NODE_ENV $NODE_ENV
+
+ENTRYPOINT ["node", "app/server.js"]
+CMD [""]

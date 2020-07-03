@@ -13,9 +13,12 @@ RUN npm install --no-optional && npm cache clean --force
 
 # Install app
 COPY webpack.config.prod.js /app/
-COPY package.json package-lock-json /app/
+COPY package.json package-lock.json /app/
 COPY config/ app/config/
-COPY app/ app/app/
+COPY app/ /app/app/
+
+# Debugging output
+RUN find /app | grep -v node_modules
 
 RUN npm run build
 
@@ -27,10 +30,7 @@ FROM node:14-alpine
 WORKDIR /app
 
 COPY config/ config/
-COPY --from=builder /app/dist/ /app/
-
-# Debugging output
-RUN find /app | grep -v node_modules
+COPY --from=builder /app/dist/ /app/app/
 
 # set our node environment, either development or production
 ARG NODE_ENV=production

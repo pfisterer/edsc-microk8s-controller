@@ -12,7 +12,7 @@ const namespace = "default"
 
 const jobRunner = new JobRunner({ namespace, getLogger })
 
-function podSpecFromCustomResourceSpec(crSpec) {
+function podSpecFromCustomResourceSpec(key, crSpec) {
 	return {
 		"restartPolicy": "Never",
 		"containers": [{
@@ -27,7 +27,7 @@ function podSpecFromCustomResourceSpec(crSpec) {
 				{ name: "OS_PASSWORD", value: crSpec.openstack_password },
 				{ name: "OS_PROJECT_NAME", value: crSpec.openstack_project },
 				{ name: "OS_DOMAIN_NAME", value: crSpec.openstack_domain_name },
-				{ name: "NODE_NAME", value: crSpec.name },
+				{ name: "NODE_NAME", value: key },
 				{ name: "IMAGE", value: crSpec.image },
 				{ name: "NODE_FLAVOR", value: crSpec.flavor },
 				{ name: "NODE_SEC_GROUP", value: crSpec.security_group },
@@ -53,8 +53,8 @@ function podSpecFromCustomResourceSpec(crSpec) {
 
 async function main() {
 	const cr = k8s.loadYaml(fs.readFileSync("./test/private-demo-microk8s.yaml"))
-	const spec = podSpecFromCustomResourceSpec(cr.spec)
 	const key = "lala1234"
+	const spec = podSpecFromCustomResourceSpec(key, cr.spec)
 
 	try {
 		console.log("Creating pod")

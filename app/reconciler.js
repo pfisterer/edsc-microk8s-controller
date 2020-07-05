@@ -44,7 +44,7 @@ module.exports = class Reconciler extends Operator {
 
 		let watcher = async (event) => {
 			let q = event.type === ResourceEventType.Deleted ? this.deleteQueue : this.addQueue
-			this.enque(q, event.object.spec.name, event.object, null)
+			this.enque(q, event.object.metadata.name, event.object, null)
 		}
 
 		await this.watchResource(this.crdGroup, this.crdVersions[0].name, this.crdPlural, watcher, this.options.namespace);
@@ -55,7 +55,7 @@ module.exports = class Reconciler extends Operator {
 	}
 
 	async updateResourceStatus(cr, status) {
-		//this.logger.debug(`updateResourceStatus: Updating status of ${cr.spec.domainName} to `, status)
+		this.logger.debug(`updateResourceStatus: Updating status of custom resource`, cr, ` to status = `, status)
 
 		//copied from node_modules/@dot-i/k8s-operator/dist/operator.js since it is not exported
 		class ResourceMetaImpl {

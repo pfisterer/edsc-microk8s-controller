@@ -55,7 +55,7 @@ module.exports = class Reconciler extends Operator {
 	}
 
 	async updateResourceStatus(cr, status) {
-		this.logger.debug(`updateResourceStatus: Updating status of custom resource`, cr, ` to status = `, status)
+		//this.logger.debug(`updateResourceStatus: Updating status of custom resource`, cr, ` to status = `, status)
 
 		//copied from node_modules/@dot-i/k8s-operator/dist/operator.js since it is not exported
 		class ResourceMetaImpl {

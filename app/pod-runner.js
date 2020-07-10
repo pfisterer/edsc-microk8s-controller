@@ -55,9 +55,9 @@ module.exports = class PodRunner {
 		return await this.coreApi().deleteNamespacedPod(key, this.options.namespace)
 	}
 
-	async list() {
+	async list(labels) {
 		//TODO Evaluate _continue: field
-		return (await this.coreApi().listNamespacedPod(this.options.namespace)).body.items
+		return (await this.coreApi().listNamespacedPod(this.options.namespace, null, null, null, null, labels)).body.items
 	}
 
 }

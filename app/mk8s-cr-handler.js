@@ -23,7 +23,7 @@ const mk8sToEnvMapping = new Map([
 
 const requiredSpecFields = ["openstack_username", "openstack_auth_url", "openstack_password", "openstack_domain_name", "openstack_project", "openstack_user_domain_name", "image", "flavor", "security_group", "key_name", "external_network_name", "floating_ip_pool", "dns_server1", "dns_server2", "microk8s_version", "enable_nginx"]
 
-const requiredStatusFields = []
+const requiredStatusFields = ["kubeconfig"]
 
 module.exports = class CrHandler {
 	constructor(options) {
@@ -75,7 +75,7 @@ module.exports = class CrHandler {
 
 	}
 
-	convertMicroK8sSpecToPod(key, mk8sSpec) {
+	convertMicroK8sSpecToPod(key, mk8sSpec, createDeleteSpec) {
 		const envMap = new Map()
 		mk8sToEnvMapping.forEach((value, key) => { if (mk8sSpec[key]) { envMap.set(value, "" + mk8sSpec[key]) } })
 
@@ -90,15 +90,22 @@ module.exports = class CrHandler {
 		const spec = {
 			'apiVersion': 'v1',
 			'kind': 'Pod',
-			'metadata': { 'name': key },
+			'metadata': {
+				'name': key,
+				'labels': {
+					'owner': 'edsc-microk8s-controller',
+					'task': createDeleteSpec ? 'delete' : 'create'
+				}
+			},
 			'spec': {
 				'restartPolicy': 'Never',
 				'containers': [
 					{
-						'name': 'edsc-microk8s-playbook',
+						'name': 'playbook',
 						'image': this.options.image,
 						'imagePullPolicy': this.options.imagePullPolicy || "IfNotPresent",
-						'env': env
+						'env': env,
+						'args': ["ansible-playbook", createDeleteSpec ? "destroy.yaml" : "deploy.yaml"]
 					}
 				]
 			}
@@ -144,7 +151,6 @@ module.exports = class CrHandler {
 		return this.checkFieldsExist(requiredStatusFields, status)
 	}
 
-
 	async getExistingResources() {
 		// return map(key, object)
 		return null;
@@ -159,7 +165,24 @@ module.exports = class CrHandler {
 	}
 
 	async handleDeleteResource(key, customResource, resource) {
-		this.logger.debug(`handleDeleteResource, key =`, key, `customResource = `, customResource, `resource = `, resource)
+		this.logger.debug(`handleDeleteResource, key =`, key)
+		let deleteKey = key + "-delete"
+
+		//Delete any existing pod
+		try {
+			await this.podRunner.delete(key)
+			this.logger.debug(`handleDeleteResource, key =`, key, ": deleted existing pod ", key)
+		} catch (e) {
+			this.logger.debug(`handleDeleteResource, key =`, key, ": no pod exists, nothing to delete")
+		}
+
+		//Create delete pod
+		const deleteSpec = this.convertMicroK8sSpecToPod(key, customResource.spec, true);
+		this.logger.debug(`Using spec`, JSON.stringify(deleteSpec, null, 3))
+
+		const newPod = await this.podRunner.create(deleteKey, deleteSpec);
+
+		this.statusFunction(key, { "controller_status": `Created new Ansible pod instance ${key} to delete existing resources.` })
 	}
 
 	async handleCreateOrUpdateResource(key, customResource, resource) {
@@ -168,8 +191,29 @@ module.exports = class CrHandler {
 
 		try {
 			const existingPod = await this.podRunner.get(key);
-			this.logger.debug(`Existing pod for key = ${key} is in phase ${existingPod.status.phase}`) //Pending, Running, Succeeded, Failed, Unknown
-			//this.logger.debug(`existingPod`, JSON.stringify(existingPod, null, 3))
+
+			//Check if this is a delete or create pod
+			const labels = existingPod?.metadata?.labels || {}
+			const createPod = labels.task === "create"
+			const deletePod = labels.task === "delete"
+			const correctOwner = labels.owner === "edsc-microk8s-controller"
+
+			// Update status if required
+			this.logger.debug(`Existing pod (key=${key}): phase ${existingPod.status.phase}, createPod=${createPod}, deletePod=${deletePod}, correctOwner=${correctOwner}`) //Pending, Running, Succeeded, Failed, Unknown
+
+			try {
+				let status = `Existing pod ${key} is in phase ${existingPod.status.phase}`
+				let hasControllerStatus = customResource.status && customResource.status.controller_status
+				let requiresStatusUpdate = !hasControllerStatus || customResource.status.controller_status !== status
+
+				if (requiresStatusUpdate) {
+					this.logger.debug(`Updating pod status for key ${key} to ${status}`)
+					await this.statusFunction(key, { "controller_status": status })
+				}
+
+			} catch (e) {
+				this.logger.debug(`Updating pod status for key ${key} failed:`, e)
+			}
 
 		} catch {
 			this.logger.debug(`No pod for key = ${key} exists, creating a new one`)
@@ -178,6 +222,9 @@ module.exports = class CrHandler {
 			this.logger.debug(`Using spec`, JSON.stringify(spec, null, 3))
 
 			const newPod = await this.podRunner.create(key, spec);
+
+			this.statusFunction(key, { "controller_status": `Created new Ansible pod instance ${key}` })
+
 			this.logger.debug(`Pod created for key = ${key}:`, newPod)
 		}
 

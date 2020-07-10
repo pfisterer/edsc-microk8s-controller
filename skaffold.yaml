@@ -27,3 +27,14 @@ profiles:
       - op: replace
         path: /deploy/kubectl/manifests/0
         value: config/k8s-deployment-dev.yaml
+
+  - name: Run Profile
+    activation:
+      - command: run
+    patches:
+      - op: replace
+        path: /build/artifacts/0/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /deploy/kubectl/manifests/0
+        value: config/k8s-deployment-dev.yaml

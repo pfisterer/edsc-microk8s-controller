@@ -1,5 +1,5 @@
 const { fixed: { setIntervalAsync: setIntervalAsync }, clearIntervalAsync } = require('set-interval-async')
-const { default: Operator, ResourceEventType } = require('@dot-i/k8s-operator');
+const { default: Operator, ResourceEventType, ResourceMetaImpl } = require('@dot-i/k8s-operator');
 const k8s = require('@kubernetes/client-node');
 
 module.exports = class Reconciler extends Operator {
@@ -56,28 +56,6 @@ module.exports = class Reconciler extends Operator {
 
 	async updateResourceStatus(cr, status) {
 		//this.logger.debug(`updateResourceStatus: Updating status of custom resource`, cr, ` to status = `, status)
-
-		//copied from node_modules/@dot-i/k8s-operator/dist/operator.js since it is not exported
-		class ResourceMetaImpl {
-			constructor(id, object) {
-				var _a, _b;
-				if (!((_a = object.metadata) === null || _a === void 0 ? void 0 : _a.name) || !((_b = object.metadata) === null || _b === void 0 ? void 0 : _b.resourceVersion) || !object.apiVersion || !object.kind) {
-					throw Error(`Malformed event object for '${id}'`);
-				}
-				this.id = id;
-				this.name = object.metadata.name;
-				this.namespace = object.metadata.namespace;
-				this.resourceVersion = object.metadata.resourceVersion;
-				this.apiVersion = object.apiVersion;
-				this.kind = object.kind;
-			}
-			static createWithId(id, object) {
-				return new ResourceMetaImpl(id, object);
-			}
-			static createWithPlural(plural, object) {
-				return new ResourceMetaImpl(`${plural}.${object.apiVersion}`, object);
-			}
-		}
 
 		let meta = ResourceMetaImpl.createWithPlural(this.crdPlural, cr);
 

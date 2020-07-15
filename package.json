@@ -11,7 +11,7 @@
   "author": "Dennis Pfisterer <github@farberg.de>",
   "license": "BSD",
   "dependencies": {
-    "@dot-i/k8s-operator": "^1.0.6",
+    "@dot-i/k8s-operator": "^1.0.7",
     "commander": "^5.1.0",
     "js-yaml": "^3.14.0",
     "kubernetes-client": "^9.0.0",

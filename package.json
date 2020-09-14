@@ -11,10 +11,9 @@
   "author": "Dennis Pfisterer <github@farberg.de>",
   "license": "BSD",
   "dependencies": {
-    "@dot-i/k8s-operator": "^1.0.7",
-    "commander": "^5.1.0",
+    "@dot-i/k8s-operator": "^1.0.11",
+    "commander": "^6.1.0",
     "js-yaml": "^3.14.0",
-    "kubernetes-client": "^9.0.0",
     "log4js": "^6.3.0",
     "set-interval-async": "^1.0.33",
     "@awaitjs/express": "^0.6.1",
@@ -22,7 +21,7 @@
   },
   "devDependencies": {
     "shebang-loader": "0.0.1",
-    "webpack": "^4.43.0",
+    "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
   "babel": {

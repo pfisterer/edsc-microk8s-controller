@@ -20,7 +20,6 @@ module.exports = class Reconciler extends Operator {
 		this.deleteQueue = new Map()
 
 		this.reconcileInterval = options.reconcileInterval;
-		this.setupReconcileTimer(this.reconcileInterval);
 
 		//this.logger.debug("constructor: New instance with options: ", options);
 	}
@@ -48,6 +47,8 @@ module.exports = class Reconciler extends Operator {
 		}
 
 		await this.watchResource(this.crdGroup, this.crdVersions[0].name, this.crdPlural, watcher, this.options.namespace);
+
+		this.setupReconcileTimer(this.reconcileInterval);
 	}
 
 	getCustomObjectsApi() {

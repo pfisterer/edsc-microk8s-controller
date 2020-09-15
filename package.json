@@ -11,13 +11,13 @@
   "author": "Dennis Pfisterer <github@farberg.de>",
   "license": "BSD",
   "dependencies": {
+    "@awaitjs/express": "^0.6.1",
     "@dot-i/k8s-operator": "^1.0.11",
     "commander": "^6.1.0",
+    "express": "^4.17.1",
     "js-yaml": "^3.14.0",
     "log4js": "^6.3.0",
-    "set-interval-async": "^1.0.33",
-    "@awaitjs/express": "^0.6.1",
-    "express": "^4.17.1"
+    "set-interval-async": "^1.0.33"
   },
   "devDependencies": {
     "shebang-loader": "0.0.1",

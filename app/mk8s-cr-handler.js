@@ -41,7 +41,7 @@ module.exports = class CrHandler {
 		this.app.use((err, req, res, next) => {
 			if (err) {
 				this.logger.warn("app:use: Error while processing a status report request: ", err, ", req = ", req);
-				return res.status(400).send({ status: 404, message: err.message }); // Bad request
+				return res.send({ status: 404, message: err.message }); // Bad request
 			}
 			next();
 		})

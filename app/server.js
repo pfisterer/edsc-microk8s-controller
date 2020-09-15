@@ -19,6 +19,7 @@ let options = optionparser
 	.option('--port <port>', 'Port to start the status collection server on', 8080)
 	.option('--image <image>', 'Docker image (and tag) to use', 'farberg/edsc-microk8s-playbook')
 	.option('--image-pull-policy <policy>', 'Image pull policy to use for the pod spec', 'IfNotPresent')
+	.option('--dump-open-files <filename>', 'Dump list of open files of the process to this file', undefined)
 	.version('0.0.1alpha')
 	.addHelpCommand()
 	.parse()
@@ -66,3 +67,36 @@ async function main(options) {
 	.then(() => console.log("Main done"))
 	.catch(e => { console.log("Error in main: ", e); process.exit(1) })
 )();
+
+if (options.dumpOpenFiles) {
+	const fs = require('fs')
+	const path = require('path')
+	const { readlink } = require("fs");
+	const dir = "/proc/self/fd"
+	console.log("Dumping open files to ", options.dumpOpenFiles)
+
+	function dumpOpenFiles() {
+		try {
+			if (fs.existsSync(options.dumpOpenFiles))
+				fs.unlinkSync(options.dumpOpenFiles)
+		} catch (e) { }
+
+		var outFile = fs.createWriteStream(options.dumpOpenFiles, { flags: 'a' /* appending (old data will be preserved) */ })
+
+		const files = fs.readdirSync(dir, { encoding: 'utf8', withFileTypes: true });
+		files.forEach((file) => {
+			if (file.isSymbolicLink()) {
+				try {
+					const t = fs.readlinkSync(path.join(dir, file.name))
+					outFile.write(t + "\n")
+				} catch (e) {
+					console.log("Skipping", file.name)
+				}
+			}
+		})
+		outFile.close()
+	}
+
+	dumpOpenFiles()
+	setInterval(() => dumpOpenFiles(), 30 * 1000)
+}

@@ -23,6 +23,18 @@ spec:
             - "--verbose"
             - "--hostname"
             - "edsc-microk8s-controller-service"
+            - "--dump-open-files"
+            - "/debug-volume/open-files.txt"
+          volumeMounts:
+            - mountPath: /debug-volume
+              name: debug-volume
+      volumes:
+        - name: debug-volume
+          hostPath:
+            # directory location on host
+            path: /opt/debug-volume
+            # this field is optional
+            type: Directory
 
 ---
 apiVersion: v1

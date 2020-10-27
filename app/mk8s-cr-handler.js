@@ -27,7 +27,7 @@ const requiredStatusFields = ["kubeconfig"]
 
 module.exports = class CrHandler {
 	constructor(options) {
-		this.logger = options.getLogger("CrHandler")
+		this.logger = options.getLogger("Mk8sHandler")
 		this.podRunner = new PodRunner(options)
 		this.options = options
 

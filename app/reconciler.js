@@ -20,8 +20,6 @@ module.exports = class Reconciler extends Operator {
 		this.deleteQueue = new Map()
 
 		this.reconcileInterval = options.reconcileInterval;
-
-		//this.logger.debug("constructor: New instance with options: ", options);
 	}
 
 	async init() {

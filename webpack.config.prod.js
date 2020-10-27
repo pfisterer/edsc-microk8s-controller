@@ -16,13 +16,16 @@ module.exports = [
 		module: {
 			rules: [
 				{
-					test: /\.(js|jsx)$/,
-					loader: 'shebang-loader'
+					test: /\.(js|jsx|mjs)$/,
+					use: ['babel-loader'],
+					// https://github.com/webpack/webpack/issues/11467
+					resolve: {
+						fullySpecified: false
+					},
+					exclude: path.resolve(__dirname, 'node_modules')
 				}
 			]
-		},
-		//,externals: [nodeExternals()]
-		//externals: { electron: "electron", emitter: "emitter", "browser-sync/lib/server/utils": "browser-sync/lib/server/utils" }
-		externals: { electron: "electron", emitter: "emitter", "browser-sync/lib/server/utils": "browser-sync/lib/server/utils" }
+		}
+		//, externals: { electron: "electron", emitter: "emitter", "browser-sync": "browser-sync/lib/server/utils" }
 	}
 ];

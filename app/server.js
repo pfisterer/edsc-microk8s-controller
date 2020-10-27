@@ -53,7 +53,10 @@ async function main(options) {
 	logger.debug(`Starting with options`, options)
 
 	//Create reconciler
-	const reconcileHandler = new Mk8sCrHandler(Object.assign({}, { getLogger }, options));
+	const DummyHandler = require('./dummy-handler')
+
+	//const reconcileHandler = new Mk8sCrHandler(Object.assign({}, { getLogger }, options));
+	const reconcileHandler = new DummyHandler(Object.assign({}, { getLogger }, options));
 	const reconciler = new Reconciler(Object.assign({}, { getLogger, reconcileHandler }, options))
 	await reconciler.start();
 }

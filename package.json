@@ -11,22 +11,22 @@
   "author": "Dennis Pfisterer <github@farberg.de>",
   "license": "BSD",
   "dependencies": {
-    "@awaitjs/express": "^0.6.3",
-    "@babel/runtime": "^7.12.1",
-    "@dot-i/k8s-operator": "^1.0.15",
-    "commander": "^6.2.0",
+    "@awaitjs/express": "^0.7.0",
+    "@babel/runtime": "^7.12.5",
+    "@dot-i/k8s-operator": "^1.1.0",
+    "commander": "^7.0.0",
     "express": "^4.17.1",
-    "js-yaml": "^3.14.0",
+    "js-yaml": "^4.0.0",
     "log4js": "^6.3.0",
-    "set-interval-async": "^1.0.33"
+    "set-interval-async": "^1.0.34"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.3",
+    "@babel/core": "^7.12.10",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
-    "@babel/preset-env": "^7.12.1",
-    "babel-loader": "^8.1.0",
-    "webpack": "^5.3.0",
-    "webpack-cli": "^4.1.0"
+    "@babel/preset-env": "^7.12.11",
+    "babel-loader": "^8.2.2",
+    "webpack": "^5.19.0",
+    "webpack-cli": "^4.4.0"
   },
   "babel": {
     "presets": [

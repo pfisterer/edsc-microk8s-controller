@@ -1,15 +1,20 @@
-apiVersion: skaffold/v1
+apiVersion: skaffold/v2beta10
 kind: Config
 
 metadata:
   name: edsc-microk8s-controller
 
 build:
+  cluster: {}
   artifacts:
     - image: farberg/edsc-microk8s-controller
       context: .
-      docker:
+      #docker:
+      #  dockerfile: Dockerfile
+      kaniko:
         dockerfile: Dockerfile
+        noPush: true
+        verbosity: debug
 
 deploy:
   kubectl:
@@ -22,7 +27,8 @@ profiles:
       - command: dev
     patches:
       - op: replace
-        path: /build/artifacts/0/docker/dockerfile
+        #path: /build/artifacts/0/docker/dockerfile
+        path: /build/artifacts/0/kaniko/dockerfile
         value: Dockerfile.dev
       - op: replace
         path: /deploy/kubectl/manifests/0
@@ -33,7 +39,8 @@ profiles:
       - command: run
     patches:
       - op: replace
-        path: /build/artifacts/0/docker/dockerfile
+        #path: /build/artifacts/0/docker/dockerfile
+        path: /build/artifacts/0/kaniko/dockerfile
         value: Dockerfile.dev
       - op: replace
         path: /deploy/kubectl/manifests/0

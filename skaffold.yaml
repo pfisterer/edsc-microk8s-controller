@@ -5,16 +5,16 @@ metadata:
   name: edsc-microk8s-controller
 
 build:
-  cluster: {}
   artifacts:
     - image: farberg/edsc-microk8s-controller
       context: .
-      #docker:
-      #  dockerfile: Dockerfile
-      kaniko:
+      docker:
         dockerfile: Dockerfile
-        noPush: true
-        verbosity: debug
+      #kaniko:
+      #  dockerfile: Dockerfile
+      #  noPush: true
+      #  verbosity: debug
+  #cluster: {}
 
 deploy:
   kubectl:
@@ -27,8 +27,8 @@ profiles:
       - command: dev
     patches:
       - op: replace
-        #path: /build/artifacts/0/docker/dockerfile
-        path: /build/artifacts/0/kaniko/dockerfile
+        path: /build/artifacts/0/docker/dockerfile
+        #path: /build/artifacts/0/kaniko/dockerfile
         value: Dockerfile.dev
       - op: replace
         path: /deploy/kubectl/manifests/0
@@ -39,8 +39,8 @@ profiles:
       - command: run
     patches:
       - op: replace
-        #path: /build/artifacts/0/docker/dockerfile
-        path: /build/artifacts/0/kaniko/dockerfile
+        path: /build/artifacts/0/docker/dockerfile
+        #path: /build/artifacts/0/kaniko/dockerfile
         value: Dockerfile.dev
       - op: replace
         path: /deploy/kubectl/manifests/0

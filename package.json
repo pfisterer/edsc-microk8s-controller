@@ -5,28 +5,28 @@
   "private": true,
   "scripts": {
     "build": "npx webpack --config webpack.config.prod.js",
-    "start": "nodemon app/server.js -- --verbose --image-pull-policy Never",
+    "start": "nodemon -x 'printf '\\e[2J\\e[3J\\e[H';clear;node' app/server.js -- --verbose --image-pull-policy Never",
     "deploy": "skaffold build -q | skaffold deploy --build-artifacts -"
   },
   "author": "Dennis Pfisterer <github@farberg.de>",
   "license": "BSD",
   "dependencies": {
-    "@awaitjs/express": "^0.7.0",
-    "@babel/runtime": "^7.12.5",
-    "@dot-i/k8s-operator": "^1.1.0",
-    "commander": "^7.0.0",
+    "@awaitjs/express": "^0.7.2",
+    "@babel/runtime": "^7.13.10",
+    "@kubernetes/client-node": "^0.14.3",
+    "commander": "^7.2.0",
     "express": "^4.17.1",
-    "js-yaml": "^4.0.0",
+    "js-yaml": "^4.1.0",
     "log4js": "^6.3.0",
-    "set-interval-async": "^1.0.34"
+    "set-interval-async": "^2.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.10",
-    "@babel/plugin-proposal-class-properties": "^7.12.1",
-    "@babel/preset-env": "^7.12.11",
+    "@babel/core": "^7.13.15",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-env": "^7.13.15",
     "babel-loader": "^8.2.2",
-    "webpack": "^5.19.0",
-    "webpack-cli": "^4.4.0"
+    "webpack": "^5.33.2",
+    "webpack-cli": "^4.6.0"
   },
   "babel": {
     "presets": [

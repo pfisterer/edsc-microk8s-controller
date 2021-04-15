@@ -33,7 +33,6 @@ module.exports = class K8sHelper {
 		return new k8s.Attach(this.config())
 	}
 
-
 	//---------------------------------------------------------
 	// Pod handling
 	//---------------------------------------------------------

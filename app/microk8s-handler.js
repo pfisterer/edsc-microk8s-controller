@@ -33,7 +33,7 @@ module.exports = class MicroK8sHandler {
 		this.k8s = new K8sHelper(options);
 	}
 
-	async start(informer, crApi, crd) {
+	async start(informer, crApi, crd, operator) {
 		this.crApi = crApi
 		this.crd = crd
 		this.informer = informer
@@ -52,50 +52,35 @@ module.exports = class MicroK8sHandler {
 	}
 
 	async added(cr) {
-		this.logger.debug(`Create event: ${cr.metadata.name}`);
 		const key = this.keyFromCR(cr);
 
 		if (await this.k8s.podExists(key)) {
-			this.updateStatus(key, { "controller_status": `Another operation (pod ${key}) is running. Please delete this request and issue a new one.` })
-		} else {
-			this.logger.info(`added: No pod with name ${key} exists, triggering creation`)
-
-			try {
-				const podSpec = this.convertMicroK8sSpecToPod(key, cr.spec);
-				this.logger.debug(`Using pod spec`, JSON.stringify(podSpec, null, 3))
-
-				await this.k8s.createPod(podSpec);
-				this.logger.debug(`Pod created for key = ${key}`)
-				this.updateStatus(key, { "controller_status": `Created new Ansible pod instance with name = ${key}` })
-
-			} catch (error) {
-				this.updateStatus(key, {
-					"controller_status": `Invalid spec received or unable to create pod, please delete this request.`,
-					"last_error": error
-				})
-			}
+			this.logger.info(`added: another operation (pod ${key}) is running`)
+			throw `Another operation(pod ${key}) is running. Please delete this request and issue a new one.`
 		}
 
+		const podSpec = this.convertMicroK8sSpecToPod(key, cr.spec);
+		this.logger.info(`added: No pod with name ${key} exists, triggering creation with pod spec\n`, JSON.stringify(podSpec, null, 3))
+
+		await this.k8s.createPod(podSpec);
+
+		this.updateStatus(key, { "controller_status": `Created new Ansible pod instance with name = ${key}` })
 	}
 
 	async deleted(cr) {
-		this.logger.debug(`Delete: ${cr.metadata.name}`);
 		const key = this.keyFromCR(cr);
-
-		this.logger.debug(`handleDeleteResource, key =`, key)
 
 		// Delete existing create pod
 		if (await this.k8s.podExists(key)) {
 			await this.k8s.deletePod(key);
-			this.logger.debug(`handleDeleteResource, key =`, key, ": deleted existing pod ", key)
-
+			this.logger.debug(`deleted: key =`, key, ": deleted existing pod ", key)
 		} else {
-			this.logger.debug(`handleDeleteResource, key =`, key, ": no pod exists, nothing to delete")
+			this.logger.debug(`deleted: key =`, key, ": no pod exists, nothing to delete")
 		}
 
 		//Create delete pod
 		const deleteSpec = this.convertMicroK8sSpecToPod(key, cr.spec, true);
-		this.logger.debug(`Using spec`, JSON.stringify(deleteSpec, null, 3))
+		this.logger.debug(`deleted: Using spec`, JSON.stringify(deleteSpec, null, 3))
 		await this.k8s.createPod(deleteSpec)
 	}
 

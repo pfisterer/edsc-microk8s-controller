@@ -4,7 +4,7 @@ module.exports = class DummyHandler {
 		this.options = options
 	}
 
-	async start(informer, crApi, crd) { }
+	async start(informer, crApi, crd, operator) { }
 	async stop() { }
 	async added(cr, informer, crApi, crd) { }
 	async updated(cr, informer, crApi, crd) { }

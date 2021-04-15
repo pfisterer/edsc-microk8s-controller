@@ -14,7 +14,7 @@ module.exports = class Operator {
 	async run() {
 		this.crd = await this.register(yaml.load(fs.readFileSync(this.options.crdFile, 'utf8')));
 		this.informer = this.createInformer()
-		await this.handler.start(this.informer, this.crdApiClient, this.crd)
+		await this.handler.start(this.informer, this.crdApiClient, this.crd, this)
 
 		return new Promise((resolve, reject) => {
 			this.resolvePromise = resolve;
@@ -25,6 +25,18 @@ module.exports = class Operator {
 	async stop() {
 		await this.handler.stop()
 		this.resolvePromise()
+	}
+
+	async crExists(name) {
+		let result = await this
+			.customObjectsApi()
+			.getNamespacedCustomObject(this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural, name)
+
+		if (result.response.statusCode == 200) {
+			return result.body
+		}
+
+		throw result.body.response.body
 	}
 
 	createInformer() {
@@ -84,7 +96,7 @@ module.exports = class Operator {
 		} catch (err) {
 
 			// API returns a 409 Conflict if CRD already exists.
-			if (err.response.statusCode !== 409) {
+			if (err?.response?.statusCode !== 409) {
 				console.log("Error:", err)
 				throw err;
 			}

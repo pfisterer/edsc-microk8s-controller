@@ -15,7 +15,12 @@ Run `skaffold dev`
 Periodically add and remove a CR:
 
 ```bash
-while true; do DELAY=10s; k apply -f test/private-demo-microk8s.yaml ; sleep $DELAY; k delete microkeights.mk8.farberg.de --all ; sleep $DELAY; done
+while true; do 
+	DELAY=10s
+	k apply -f test/private-demo-microk8s.yaml
+	sleep $DELAY; k delete microkeights.mk8.farberg.de --all
+	sleep $DELAY
+done
 ```
 
 ## Development Deployment to K8S

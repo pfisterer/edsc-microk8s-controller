@@ -54,7 +54,7 @@ module.exports = class RetryHandler {
 			}
 		}
 
-		this.statusFunction(cr, `Error occured in last retry ${this.options.retryCountMax}. Failed.`, error)
+		this.statusFunction(cr, `Failed retrying ${this.options.retryCountMax} times`)
 		throw new Error(`Failed retrying ${this.options.retryCountMax} times`);
 	}
 

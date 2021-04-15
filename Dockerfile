@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # Builder
 # -------------------------------------------------------------
-FROM node:14-alpine AS builder
+FROM node:15-alpine AS builder
 LABEL maintainer="Dennis Pfisterer, http://www.dennis-pfisterer.de"
 
 # Copy everything and create workdir
@@ -25,7 +25,7 @@ RUN npm run build
 # -------------------------------------------------------------
 # Final container image
 # -------------------------------------------------------------
-FROM node:14-alpine
+FROM node:15-alpine
 
 WORKDIR /app
 

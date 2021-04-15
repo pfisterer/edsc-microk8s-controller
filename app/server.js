@@ -1,8 +1,8 @@
 const log4js = require('log4js')
 const { program: optionparser } = require('commander')
-
-const Mk8sCrHandler = require("./mk8s-cr-handler.js");
-const Reconciler = require("./reconciler");
+const Operator = require('./operator');
+const MicroK8sHandler = require('./microk8s-handler');
+//const DummyHandler = require('./dummy-handler');
 
 // ------------------------------------------------
 // Parse command line options
@@ -11,21 +11,21 @@ const Reconciler = require("./reconciler");
 let options = optionparser
 	.storeOptionsAsProperties(true)
 	.option('-v, --verbose', "Display verbose output", false)
-	.option('--crd-file <filename>', 'CRD filename', './config/micro-k8s-crd-def-v1beta1.yaml')
+	.option('--crd-file <filename>', 'CRD (custom resource definition) filename', './config/micro-k8s-crd-def-v1beta1.yaml')
 	.option('--namespace <ns>', 'Kubernetes namespace', 'default')
-	.option('--reconcile-interval <ms>', "Reconcile interval in millis", 5 * 1000)
 	.option('--mode <mode>', 'The mode to start the app in (development or production)', 'production')
 	.option('--hostname <hostname>', 'Hostname to use for constructing the status report URL', 'localhost')
 	.option('--port <port>', 'Port to start the status collection server on', 8080)
 	.option('--image <image>', 'Docker image (and tag) to use', 'farberg/edsc-microk8s-playbook')
-	.option('--image-pull-policy <policy>', 'Image pull policy to use for the pod spec', 'IfNotPresent')
-	.version('0.0.1alpha')
+	.option('--image-pull-policy <policy>', 'Image pull policy to use for the pod spec', 'Always')
+	.option('--cleanup-interval <interval>', 'Interval in ms to cleanup resources periodically', 60 * 1000)
+	.version('0.0.2alpha')
 	.addHelpCommand()
 	.parse()
 	.opts()
 
 // ------------------------------------------------
-// Set global log level options
+// Set global options
 // ------------------------------------------------
 
 let logLevel = options.verbose ? "debug" : "info";
@@ -36,29 +36,27 @@ function getLogger(name) {
 	return log
 }
 
-// ------------------------------------------------
-// Create options to be used for the app
-// ------------------------------------------------
-
-options = Object.assign({}, options, {
-	logger: getLogger
-})
+options = Object.assign({}, options, { getLogger })
 
 // ------------------------------------------------
 // Main
 // ------------------------------------------------
 
+async function main1(options) {
+	const K8sHelper = require('./k8s-helper')
+	const k8shelper = new K8sHelper(options)
+
+	//try { console.log(await k8shelper.getPod("bla1")); } catch {		console.log("no pod");	}
+}
+
 async function main(options) {
 	const logger = getLogger("main")
 	logger.debug(`Starting with options`, options)
 
-	//Create reconciler
-	const DummyHandler = require('./dummy-handler')
+	const handler = new MicroK8sHandler(options)
+	const operator = new Operator(options, handler)
+	await operator.run()
 
-	//const reconcileHandler = new Mk8sCrHandler(Object.assign({}, { getLogger }, options));
-	const reconcileHandler = new DummyHandler(Object.assign({}, { getLogger }, options));
-	const reconciler = new Reconciler(Object.assign({}, { getLogger, reconcileHandler }, options))
-	await reconciler.start();
 }
 
 // ------------------------------------------------
@@ -66,6 +64,6 @@ async function main(options) {
 // ------------------------------------------------
 
 (async () => main(options)
-	.then(() => console.log("Main done"))
+	.then(() => console.log("Main done..."))
 	.catch(e => { console.log("Error in main: ", e); process.exit(1) })
 )();

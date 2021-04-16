@@ -37,6 +37,7 @@ module.exports = class MicroK8sHandler {
 		this.crApi = crApi
 		this.crd = crd
 		this.informer = informer
+		this.operator = operator
 
 		this.logger.debug(`Setting cleanup interval to ${this.options.cleanupInterval}`)
 		this.cleanup();

@@ -27,13 +27,24 @@ done
 
 Run `skaffold run`
 
-# Todos
-
-- Periodically delete pods that match not active cr or are delete pods and are in state completed
-- Periodically verify that for each CR there is a running/completed pod
-
 ## FAQ
 
-I'm getting errors like `Exception in main method: Error: customresourcedefinitions.apiextensions.k8s.io is forbidden: User "system:serviceaccount:default:default" cannot create resource "customresourcedefinitions" in API group "apiextensions.k8s.io" at the cluster scope`
+I'm getting errors like 
+
+```console
+Exception in main method: Error: customresourcedefinitions.apiextensions.k8s.io is forbidden: User "system:serviceaccount:default:default" cannot create resource "customresourcedefinitions" in API group "apiextensions.k8s.io" at the cluster scope
+````
+
+Solution
+
 - Create missing RBAC roles
-- For development (e.g., in Minikube), run `kubectl create clusterrolebinding --clusterrole=cluster-admin --user=system:serviceaccount:default:default --clusterrole=cluster-admin --user=system:serviceaccount rds-admin-binding`
+- For development (e.g., in Minikube), run 
+
+```console
+kubectl create clusterrolebinding \
+	--clusterrole=cluster-admin \
+	--user=system:serviceaccount:default:default \
+	--clusterrole=cluster-admin \
+	--user=system:serviceaccount \
+	rds-admin-binding
+```

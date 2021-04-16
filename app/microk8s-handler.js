@@ -85,12 +85,21 @@ module.exports = class MicroK8sHandler {
 	}
 
 	async cleanup() {
+		// Remove "delete" pods that have completed (i.e., the matching CR was deleted and the delete pod has completed)
 		for (let pod of (await this.k8s.getPods("owner=edsc-microk8s-controller,task=delete"))) {
 			if (pod.status.phase != "Pending" && pod.status.phase != "Running") {
 				this.logger.debug(`cleanup: Removing delete pod ${pod.metadata.name} in phase ${pod.status.phase}`)
 				await this.k8s.deletePod(pod.metadata.name)
 			}
 		}
+
+		// Delete pods that match not active cr or are delete pods and are in state completed
+		(await this.k8s.getPods("owner=edsc-microk8s-controller"))
+			.filter(async pod => !(await this.operator.crExists(pod.metadata.name)))
+			.forEach(async pod => {
+				this.logger.debug(`cleanup: Removing pod ${pod.metadata.name} because not CR with name = ${pod.metadata.name} exists`)
+				await this.k8s.deletePod(pod.metadata.name)
+			})
 	}
 
 	updateStatus(key, status) {

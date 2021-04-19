@@ -5,7 +5,7 @@ const { program: optionparser } = require('commander')
 const Operator = require('./operator');
 const MicroK8sHandler = require('./microk8s-handler')
 const RetryHandler = require('./retry-handler')
-//const DummyHandler = require('./dummy-handler')
+const DummyHandler = require('./dummy-handler')
 
 
 // ------------------------------------------------
@@ -52,8 +52,49 @@ options = Object.assign({}, options, { getLogger })
 async function main1(options) {
 	const K8sHelper = require('./k8s-helper')
 	const k8shelper = new K8sHelper(options)
+	const dumyHandler = new DummyHandler(options)
 
-	//try { console.log(await k8shelper.getPod("bla1")); } catch {		console.log("no pod");	}
+	//Test pod exists
+	if (false) {
+		try { console.log(await k8shelper.getPod("bla1")); } catch { console.log("no pod"); }
+	}
+
+	//Retry proxy
+	if (false) {
+		const operator = new Operator(options, dumyHandler)
+
+		//Operator
+
+		setTimeout(async () => {
+			try {
+				console.log(await operator.crExists('microk8s-pfisterer-controller-demo-microk8'))
+			} catch (error) {
+				console.error(error)
+			}
+		}, 2000)
+		await operator.run()
+	}
+
+	// 
+	if (true) {
+		const operator = new Operator(options, dumyHandler)
+		setTimeout(async () => {
+			try {
+
+				console.log("Patch result: ",
+					await operator.patchCrStatus('microk8s-pfisterer-controller-demo-microk8',
+						{
+							"bla": "blubb"
+						}
+					)
+				)
+			} catch (error) {
+				console.error("Error", error?.body ? error.body : error)
+			}
+		}, 2000)
+		await operator.run()
+	}
+
 }
 
 async function main(options) {
@@ -62,8 +103,8 @@ async function main(options) {
 
 	//Handler
 	const handler = new MicroK8sHandler(options)
-	const handlerStatusUpdateFunction = (cr, status, error) => {
-		handler.updateStatus(handler.keyFromCR(cr), {
+	const handlerStatusUpdateFunction = async (cr, status, error) => {
+		return handler.updateStatus(handler.keyFromCR(cr), {
 			'controller_status': status,
 			'last_error': error
 		})
@@ -82,20 +123,19 @@ async function main(options) {
 // Start main method
 // ------------------------------------------------
 
-async function run_main(options) {
-
+async function run_main(options, main_func) {
 	if (!options.hostname) {
 		dns.lookup(os.hostname(), function (err, address, fam) {
-			console.log("Using hostname ", address, " since no --hostname option was supplied.")
-			return main(options);
+			options.hostname = address
+			console.log(`Using hostname ${options.hostname} since no --hostname option was supplied.`)
+			return main_func(options);
 		})
 	} else {
-		return main(options);
+		return main_func(options);
 	}
-
 }
 
-(async () => run_main(options)
+(async () => run_main(options, main)
 	.then(() => console.log("Main done..."))
 	.catch(e => { console.log("Error in main: ", e); process.exit(1) })
 )();

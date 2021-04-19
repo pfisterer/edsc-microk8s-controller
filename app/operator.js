@@ -28,15 +28,36 @@ module.exports = class Operator {
 	}
 
 	async crExists(name) {
-		let result = await this
-			.customObjectsApi()
-			.getNamespacedCustomObject(this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural, name)
+		try {
+			let result = await this.k8s.customObjectsApi()
+				.getNamespacedCustomObject(this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural, name)
 
-		if (result.response.statusCode == 200) {
-			return result.body
+			return result.response.statusCode == 200;
+		} catch (error) {
+			return false
 		}
+	}
 
-		throw result.body.response.body
+
+	async patchCrStatus(crName, statusPatch) {
+		this.logger.debug(`Patching status of CR ${crName} with status: `, statusPatch)
+
+		const patch = [
+			{
+				"op": "replace",
+				"path": "/status",
+				"value": statusPatch
+			}
+		];
+		const options = { "headers": { "Content-type": this.k8s.k8s().PatchUtils.PATCH_FORMAT_JSON_PATCH } };
+
+		// public async patchNamespacedCustomObjectStatus (group: string, version: string, namespace: string, plural: string, name: string, body: object, dryRun?: string, fieldManager?: string, force?: boolean, options: {headers: {[name: string]: string}} = {headers: {}}) : Promise<{ response: http.IncomingMessage; body: object;  }> {...}
+		return this.k8s.customObjectsApi().patchNamespacedCustomObjectStatus(
+			/*group*/ this.crd.group, /* version */ this.crd.versions[0].name, /* namespace */ this.options.namespace, /* plural */ this.crd.plural,
+			/* name */crName, /* body */ patch,	/* dryRun */ undefined,
+			/* fieldManager */ undefined, /* force */ undefined,
+			/* options */ options
+		)
 	}
 
 	createInformer() {

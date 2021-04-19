@@ -39,7 +39,7 @@ module.exports = class MicroK8sHandler {
 		this.informer = informer
 		this.operator = operator
 
-		this.logger.debug(`Setting cleanup interval to ${this.options.cleanupInterval}`)
+		this.logger.debug(`start: Setting cleanup interval to ${this.options.cleanupInterval}`)
 		this.cleanup();
 		this.timerId = setInterval(() => this.cleanup(), this.options.cleanupInterval)
 	}
@@ -49,7 +49,7 @@ module.exports = class MicroK8sHandler {
 	}
 
 	async updated(cr) {
-		this.logger.error("Not implemented")
+		//this.logger.error("updated: Not implemented")
 	}
 
 	async added(cr) {
@@ -86,7 +86,17 @@ module.exports = class MicroK8sHandler {
 	}
 
 	async cleanup() {
-		// Remove "delete" pods that have completed (i.e., the matching CR was deleted and the delete pod has completed)
+		// Remove "create" pods where no matching custom resource exists
+		for (let pod of (await this.k8s.getPods("owner=edsc-microk8s-controller,task=create"))) {
+			const matchingCrExists = (await this.operator.crExists(pod.metadata.name))
+
+			if (!matchingCrExists) {
+				this.logger.debug(`cleanup: Removing pod ${pod.metadata.name} because no matching CR with the same name exists`)
+				await this.k8s.deletePod(pod.metadata.name)
+			}
+		}
+
+		// Remove "delete" pods that have completed (i.e., the CR was deleted and the delete pod has completed)
 		for (let pod of (await this.k8s.getPods("owner=edsc-microk8s-controller,task=delete"))) {
 			if (pod.status.phase != "Pending" && pod.status.phase != "Running") {
 				this.logger.debug(`cleanup: Removing delete pod ${pod.metadata.name} in phase ${pod.status.phase}`)
@@ -94,24 +104,20 @@ module.exports = class MicroK8sHandler {
 			}
 		}
 
-		// Delete pods that match not active cr or are delete pods and are in state completed
-		(await this.k8s.getPods("owner=edsc-microk8s-controller"))
-			.filter(async pod => !(await this.operator.crExists(pod.metadata.name)))
-			.forEach(async pod => {
-				this.logger.debug(`cleanup: Removing pod ${pod.metadata.name} because not CR with name = ${pod.metadata.name} exists`)
-				await this.k8s.deletePod(pod.metadata.name)
-			})
 	}
 
-	updateStatus(key, status) {
+	async updateStatus(key, status) {
 		if (!this.crApi) {
-			this.logger.warn("No CR api client available, doing nothing")
+			this.logger.warn("updateStatus: No CR api client available, doing nothing")
 			return
 		}
 
-		this.logger.debug(`Status update for key ${key}: status = `, status)
-
-		//this.crApi.patchClusterCustomObjectStatus(this.crd.group, this.crd.versions[0].name, this.crd.plural, key, status)
+		this.logger.debug(`updateStatus: Status update for key ${key}: status = `, status)
+		try {
+			return await this.operator.patchCrStatus(key, status)
+		} catch (error) {
+			this.logger.error("updateStatus: error patching status:", error?.body ? error.body : error)
+		}
 	}
 
 	keyFromCR(cr) {
@@ -128,7 +134,7 @@ module.exports = class MicroK8sHandler {
 		// Dump express error messages to the log
 		this.app.use((err, req, res, next) => {
 			if (err) {
-				this.logger.warn("app:use: Error while processing a status report request: ", err, ", req = ", req);
+				this.logger.warn("startStatusHandlerWebServer:use: Error while processing a status report request: ", err, ", req = ", req);
 				return res.send({ status: 404, message: err.message }); // Bad request
 			}
 			next();
@@ -138,16 +144,16 @@ module.exports = class MicroK8sHandler {
 		this.app.postAsync('/status/:key', async (req, res) => {
 			const key = req.params.key
 			const statusJson = req.body
-			this.logger.debug(`Web server received status update for key ${key}`);
+			this.logger.debug(`startStatusHandlerWebServer: Web server received status update for key ${key}`);
 
 			try {
 				const existingPod = await this.k8s.getPod(key);
 
-				this.logger.debug(`Existing pod with name = ${key} is in phase ${existingPod.status.phase}`)
+				this.logger.debug(`startStatusHandlerWebServer: Existing pod with name = ${key} is in phase ${existingPod.status.phase}`)
 				this.updateStatus(key, Object.assign({}, { podStatus: existingPod.status.phase }, statusJson))
 
 			} catch {
-				this.logger.warn(`app:postAsync: No pod for key = ${key} exists, unable to set status`)
+				this.logger.warn(`startStatusHandlerWebServer::postAsync: No pod for key = ${key} exists, unable to set status`)
 			}
 
 			res.send("Ok")

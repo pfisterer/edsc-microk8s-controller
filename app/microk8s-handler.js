@@ -7,8 +7,8 @@ const mk8sToEnvMapping = new Map([
 	["openstack_auth_url", 'OS_AUTH_URL'],
 	["openstack_password", 'OS_PASSWORD'],
 	["openstack_domain_name", 'OS_DOMAIN_NAME'],
-	["openstack_project", 'OS_PROJECT_NAME'],
 	["openstack_user_domain_name", 'OS_USER_DOMAIN_NAME'],
+	["openstack_project", 'OS_PROJECT_NAME'],
 	["image", 'IMAGE'],
 	["flavor", 'NODE_FLAVOR'],
 	["security_group", 'NODE_SEC_GROUP'],
@@ -39,13 +39,15 @@ module.exports = class MicroK8sHandler {
 		this.informer = informer
 		this.operator = operator
 
-		this.logger.debug(`start: Setting cleanup interval to ${this.options.cleanupInterval}`)
-		this.cleanup();
-		this.timerId = setInterval(() => this.cleanup(), this.options.cleanupInterval)
+		this.logger.debug(`start: Setting reconcile interval to ${this.options.cleanupInterval}`)
+		this.reconcile();
+		this.timerId = setInterval(() => this.reconcile(), this.options.cleanupInterval)
+		this.startStatusHandlerWebServer()
 	}
 
 	async stop() {
 		clearInterval(this.timerId)
+		this.httpServer.close(() => this.logger.debug("HTTP server closed"))
 	}
 
 	async updated(cr) {
@@ -57,7 +59,7 @@ module.exports = class MicroK8sHandler {
 
 		if (await this.k8s.podExists(key)) {
 			this.logger.info(`added: another operation (pod ${key}) is running`)
-			throw `Another operation(pod ${key}) is running. Please delete this request and issue a new one.`
+			throw `Another operation is running (pod ${key}). Delete this request and issue a new one.`
 		}
 
 		const podSpec = this.convertMicroK8sSpecToPod(key, cr.spec);
@@ -85,13 +87,13 @@ module.exports = class MicroK8sHandler {
 		await this.k8s.createPod(deleteSpec)
 	}
 
-	async cleanup() {
+	async reconcile() {
 		// Remove "create" pods where no matching custom resource exists
 		for (let pod of (await this.k8s.getPods("owner=edsc-microk8s-controller,task=create"))) {
-			const matchingCrExists = (await this.operator.crExists(pod.metadata.name))
+			const matchingCrExists = (await this.operator.k8sHelper().crExists(pod.metadata.name))
 
 			if (!matchingCrExists) {
-				this.logger.debug(`cleanup: Removing pod ${pod.metadata.name} because no matching CR with the same name exists`)
+				this.logger.debug(`reconcile: Removing pod ${pod.metadata.name} because no matching CR with the same name exists`)
 				await this.k8s.deletePod(pod.metadata.name)
 			}
 		}
@@ -99,9 +101,21 @@ module.exports = class MicroK8sHandler {
 		// Remove "delete" pods that have completed (i.e., the CR was deleted and the delete pod has completed)
 		for (let pod of (await this.k8s.getPods("owner=edsc-microk8s-controller,task=delete"))) {
 			if (pod.status.phase != "Pending" && pod.status.phase != "Running") {
-				this.logger.debug(`cleanup: Removing delete pod ${pod.metadata.name} in phase ${pod.status.phase}`)
+				this.logger.debug(`reconcile: Removing delete pod ${pod.metadata.name} in phase ${pod.status.phase}`)
 				await this.k8s.deletePod(pod.metadata.name)
 			}
+		}
+
+		// Create "create" pods when no one exists in "completed" state
+		try {
+			for (let cr of (await this.k8s.listCrs())) {
+				if (!this.k8s.podExists(cr.metadata.name)) {
+					this.logger.debug(`reconcile: No pod exists for ${pod.metadata.name}, re-creating it`)
+					this.added(cr)
+				}
+			}
+		} catch (error) {
+			this.logger.debug("Unable to list CRs", error)
 		}
 
 	}
@@ -114,7 +128,7 @@ module.exports = class MicroK8sHandler {
 
 		this.logger.debug(`updateStatus: Status update for key ${key}: status = `, status)
 		try {
-			return await this.operator.patchCrStatus(key, status)
+			return await this.operator.k8sHelper().patchCrStatus(key, status)
 		} catch (error) {
 			this.logger.error("updateStatus: error patching status:", error?.body ? error.body : error)
 		}
@@ -160,8 +174,8 @@ module.exports = class MicroK8sHandler {
 		})
 
 		// Start web server
-		this.app.listen(this.options.port, () => {
-			this.logger.debug(`Started on port ${options.port}, post status to http://${options.hostname}:${options.port}/status/:id`);
+		this.httpServer = this.app.listen(this.options.port, () => {
+			this.logger.debug(`Started on port ${this.options.port}, post status to http://${this.options.hostname}:${this.options.port}/status/:id`);
 		})
 	}
 

@@ -78,5 +78,90 @@ module.exports = class K8sHelper {
 		return pods.body.items
 	}
 
+	//---------------------------------------------------------
+	// Custom Resources
+	//---------------------------------------------------------
+
+	crdDefinition() {
+		return this.crd
+	}
+
+	async registerCrd(crd) {
+
+		try {
+			const apiVersion = crd['apiVersion']
+
+			if (!apiVersion.startsWith('apiextensions.k8s.io/')) {
+				throw new Error("register: Invalid CRD kind (expected 'apiextensions.k8s.io')");
+			}
+
+			if (apiVersion === 'apiextensions.k8s.io/v1beta1') {
+				this.crdApiClient = this.config().makeApiClient(k8s.ApiextensionsV1beta1Api)
+			} else {
+				this.crdApiClient = await this.config().makeApiClient(k8s.ApiextensionsV1Api)
+			}
+
+			await this.crdApiClient.createCustomResourceDefinition(crd);
+
+			this.logger.info(`register: Registered custom resource definition '${crd.metadata.name}'`);
+
+		} catch (err) {
+
+			// API returns a 409 Conflict if CRD already exists.
+			if (err?.response?.statusCode !== 409) {
+				this.logger.error("register: Error:", err)
+				throw err;
+			}
+		}
+
+		this.crd = {
+			group: crd.spec.group,
+			versions: crd.spec.versions,
+			plural: crd.spec.names.plural,
+		}
+	}
+
+	async crExists(name) {
+		try {
+			let result = await this.customObjectsApi()
+				.getNamespacedCustomObject(this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural, name)
+
+			return result.response.statusCode == 200;
+		} catch (error) {
+			return false
+		}
+	}
+
+	async listCrs() {
+		return (
+			await this.customObjectsApi().listNamespacedCustomObject(
+				this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural
+			)
+		).body;
+	}
+
+	async patchCrStatus(crName, statusPatch) {
+		this.logger.debug(`Patching status of CR ${crName} with status: `, statusPatch)
+
+		const patch = [
+			{
+				"op": "replace",
+				"path": "/status",
+				"value": statusPatch
+			}
+		];
+		const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
+
+		// public async patchNamespacedCustomObjectStatus (group: string, version: string, namespace: string, plural: string, name: string, body: object, dryRun?: string, fieldManager?: string, force?: boolean, options: {headers: {[name: string]: string}} = {headers: {}}) : Promise<{ response: http.IncomingMessage; body: object;  }> {...}
+		return this.customObjectsApi().patchNamespacedCustomObjectStatus(
+			/*group*/ this.crd.group, /* version */ this.crd.versions[0].name, /* namespace */ this.options.namespace, /* plural */ this.crd.plural,
+			/* name */crName, /* body */ patch,	/* dryRun */ undefined,
+			/* fieldManager */ undefined, /* force */ undefined,
+			/* options */ options
+		)
+	}
+
+
+
 }
 

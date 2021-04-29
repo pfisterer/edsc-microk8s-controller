@@ -6,8 +6,8 @@ module.exports = class DummyHandler {
 
 	async start(informer, crApi, crd, operator) { }
 	async stop() { }
-	async added(cr, informer, crApi, crd) { }
-	async updated(cr, informer, crApi, crd) { }
-	async deleted(cr, informer, crApi, crd) { }
 
+	async added(cr) { }
+	async updated(cr) { }
+	async deleted(cr) { }
 }

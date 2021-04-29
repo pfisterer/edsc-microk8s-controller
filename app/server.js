@@ -3,10 +3,9 @@ const os = require('os')
 const log4js = require('log4js')
 const { program: optionparser } = require('commander')
 const Operator = require('./operator');
-const MicroK8sHandler = require('./microk8s-handler')
-const RetryHandler = require('./retry-handler')
-const DummyHandler = require('./dummy-handler')
-
+const MicroK8sHandler = require('./handler-microk8s')
+const RetryHandler = require('./handler-retry')
+const DummyHandler = require('./handler-dummy')
 
 // ------------------------------------------------
 // Parse command line options

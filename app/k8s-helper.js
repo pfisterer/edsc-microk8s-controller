@@ -87,12 +87,15 @@ module.exports = class K8sHelper {
 	}
 
 	async registerCrd(crd) {
+		this.logger.info(`registerCrd: Trying to register custom resource definition`);
 
 		try {
 			const apiVersion = crd['apiVersion']
 
 			if (!apiVersion.startsWith('apiextensions.k8s.io/')) {
-				throw new Error("register: Invalid CRD kind (expected 'apiextensions.k8s.io')");
+				const msg = "registerCrd: Invalid CRD kind (expected 'apiextensions.k8s.io')"
+				this.logger.error(msg);
+				throw new Error(msg);
 			}
 
 			if (apiVersion === 'apiextensions.k8s.io/v1beta1') {
@@ -103,13 +106,14 @@ module.exports = class K8sHelper {
 
 			await this.crdApiClient.createCustomResourceDefinition(crd);
 
-			this.logger.info(`register: Registered custom resource definition '${crd.metadata.name}'`);
+			this.logger.info(`registerCrd: Registered custom resource definition '${crd.metadata.name}'`);
 
 		} catch (err) {
+			this.logger.info(`registerCrd: Already registered.`);
 
 			// API returns a 409 Conflict if CRD already exists.
 			if (err?.response?.statusCode !== 409) {
-				this.logger.error("register: Error:", err)
+				this.logger.error("registerCrd: Error:", err)
 				throw err;
 			}
 		}
@@ -119,6 +123,7 @@ module.exports = class K8sHelper {
 			versions: crd.spec.versions,
 			plural: crd.spec.names.plural,
 		}
+		this.logger.debug(`registerCrd: Done, this.crd = `, this.crd);
 	}
 
 	async crExists(name) {
@@ -137,7 +142,7 @@ module.exports = class K8sHelper {
 			await this.customObjectsApi().listNamespacedCustomObject(
 				this.crd.group, this.crd.versions[0].name, this.options.namespace, this.crd.plural
 			)
-		).body;
+		)?.body?.items;
 	}
 
 	async patchCrStatus(crName, statusPatch) {

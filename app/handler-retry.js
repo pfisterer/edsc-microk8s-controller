@@ -49,7 +49,7 @@ module.exports = class RetryHandler {
 			} catch (error) {
 				this.statusFunction(cr, `Error occured in retry ${retry}/${this.options.retryCountMax}`, error)
 				const delayMs = Math.pow(2, retry) * this.options.retryInterval;
-				this.logger.debug("Retry delay is ", delayMs)
+				this.logger.debug("Retry delay is ", delayMs, "ms")
 				await delay(delayMs);
 			}
 		}

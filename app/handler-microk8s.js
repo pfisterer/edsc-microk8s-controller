@@ -30,7 +30,6 @@ module.exports = class MicroK8sHandler {
 	constructor(options) {
 		this.logger = options.getLogger("MicroK8sHandler")
 		this.options = options
-		this.k8s = new K8sHelper(options);
 	}
 
 	async start(informer, crApi, crd, operator) {
@@ -38,6 +37,7 @@ module.exports = class MicroK8sHandler {
 		this.crd = crd
 		this.informer = informer
 		this.operator = operator
+		this.k8s = operator.k8s
 
 		this.logger.debug(`start: Setting reconcile interval to ${this.options.cleanupInterval}`)
 		this.reconcile();

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "npx webpack --config webpack.config.prod.js",
-    "start": "nodemon -x 'printf '\\e[2J\\e[3J\\e[H';clear;node' app/server.js -- --verbose --image-pull-policy Never",
+    "start": "nodemon -x 'printf '\\e[2J\\e[3J\\e[H';clear;node' --unhandled-rejections=warn app/server.js -- --verbose --image-pull-policy Never",
     "deploy": "skaffold build -q | skaffold deploy --build-artifacts -"
   },
   "author": "Dennis Pfisterer <github@farberg.de>",

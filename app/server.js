@@ -124,8 +124,9 @@ async function main(options) {
 
 async function run_main(options, main_func) {
 	if (!options.hostname) {
-		dns.lookup(os.hostname(), function (err, address, fam) {
-			options.hostname = address
+		dns.lookup(os.hostname(), { all: true, family: 4 }, function (err, address, fam) {
+			const first_non_localhost = address.filter(a => a.address != "127.0.0.1")?.[0]
+			options.hostname = first_non_localhost.address
 			console.log(`Using hostname ${options.hostname} since no --hostname option was supplied.`)
 			return main_func(options);
 		})

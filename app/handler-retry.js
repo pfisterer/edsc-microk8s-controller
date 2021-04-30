@@ -39,8 +39,9 @@ module.exports = class RetryHandler {
 				//Check that the resource still exists if this isn't the first try
 				if (verifyCrExists && retry > 1) {
 					try {
-						await this.operator.crExists(cr.metadata.name)
-					} catch {
+						await this.operator.k8sHelper().crExists(cr.metadata.name)
+					} catch (error) {
+						this.logger.warn(`Error in retry ${retry}/${this.options.retryCountMax}: CR ${cr.metadata.name} does not exist anymore:`, error)
 						throw `Error in retry ${retry}/${this.options.retryCountMax}: CR ${cr.metadata.name} does not exist anymore`
 					}
 				}

@@ -45,7 +45,7 @@ module.exports = class Operator {
 
 		informer.on('add', async (obj) => {
 			try {
-				this.handler.added(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
+				await this.handler.added(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
 			} catch (error) {
 				this.logger.error("on:add: Error in handler", error)
 			}
@@ -53,7 +53,7 @@ module.exports = class Operator {
 
 		informer.on('update', async (obj) => {
 			try {
-				this.handler.updated(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
+				await this.handler.updated(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
 			} catch (error) {
 				this.logger.error("on:update: Error in handler", error)
 			}
@@ -61,7 +61,7 @@ module.exports = class Operator {
 
 		informer.on('delete', async (obj) => {
 			try {
-				this.handler.deleted(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
+				await this.handler.deleted(obj, informer, this.k8sHelper().crdApiClient, this.k8sHelper().crdDefinition())
 			} catch (error) {
 				this.logger.error("on:delete: Error in handler", error)
 			}
